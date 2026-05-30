@@ -20,8 +20,9 @@ st.title("📊 AI Stock Advisor")
 stock_name = st.text_input("Enter Stock Name (e.g., TCS, INFY, RELIANCE)")
 investor_type = st.selectbox("Select Investor Type", ["Existing Investor", "New Investor"])
 
-bought_price = None
+
 if investor_type == "Existing Investor":
+    bought_price = None
     bought_price = st.number_input("Enter your Buy Price", min_value=0.0)
 
 API_KEY = "37bb30fd13ef48bf9f065357dfeae700" 
@@ -114,17 +115,54 @@ if stock_name:
     scores = []
 
     try:
-        url = f"https://newsapi.org/v2/everything?q={search_query} stock India OR NSE {search_query}&language=en&sortBy=publishedAt&apiKey={API_KEY}"
+        # query = f"{search_query} stock market NSE BSE finance"
+
+        # url = f"https://newsapi.org/v2/everything?q={query}&language=en&sortBy=publishedAt&apiKey={API_KEY}"
+        
+        # url = f"https://newsapi.org/v2/everything?q={search_query} stock India OR NSE {search_query}&language=en&sortBy=publishedAt&apiKey={API_KEY}"
+        # response = requests.get(url)
+
+
+
+
+        # ---------- OVERALL MARKET NEWS ----------
+
+        st.header("📈 Overall Market News")
+
+        market_query = "Indian stock market Sensex Nifty"
+
+        market_url = f"https://newsapi.org/v2/everything?q={market_query}&language=en&sortBy=publishedAt&apiKey={API_KEY}"
+
+        market_response = requests.get(market_url)
+
+        market_articles = market_response.json().get('articles', [])[:5]
+
+        for article in market_articles:
+          st.subheader(article["title"])
+
+          if article["description"]:
+           st.write(article["description"])
+
+          st.write(article["url"])
+
+          st.markdown("---")
+
+
+# ---------- STOCK SPECIFIC NEWS ----------
+
+        query = f'"{search_query}" stock market'
+
+        url = f"https://newsapi.org/v2/everything?q={query}&language=en&sortBy=publishedAt&apiKey={API_KEY}"
+
         response = requests.get(url)
 
         if response.status_code != 200:
-            st.error("News API Error")
             articles = []
         else:
             articles = response.json().get('articles', [])
 
         if not articles:
-            st.warning("No news found")
+            st.warning("No stock-specific news found")
 
         for article in articles[:10]:
             title = article.get('title', '')
@@ -153,8 +191,8 @@ if stock_name:
             st.write("---")
 
         # =========================
-# FINAL MARKET SENTIMENT
-# =========================
+        # FINAL MARKET SENTIMENT
+        # =========================
 
         positive_count = len(positive_news)
         negative_count = len(negative_news)
@@ -308,8 +346,8 @@ if stock_name:
 
     st.plotly_chart(fig, use_container_width=True)
     # =========================
-# BUY / SELL SIGNAL
-# =========================
+    # BUY / SELL SIGNAL
+    # =========================
 
     latest_price = df['Close'].iloc[-1]
     latest_ma20 = df['MA20'].iloc[-1]
@@ -317,26 +355,26 @@ if stock_name:
 
     st.subheader("Trading Signal")
 
-# BUY SIGNAL
+    # BUY SIGNAL
     if latest_price > latest_ma20 and latest_rsi < 70:
        st.success("🟢 BUY SIGNAL")
 
-# SELL SIGNAL
+    # SELL SIGNAL
     elif latest_price < latest_ma20 and latest_rsi > 30:
        st.error("🔴 SELL SIGNAL")
 
-# HOLD SIGNAL
+    # HOLD SIGNAL
     else:
        st.warning("🟡 HOLD")
     # =========================
-# MOVING AVERAGE CHART
-# =========================
+    # MOVING AVERAGE CHART
+    # =========================
 
     st.subheader("Moving Average Chart")
 
     fig2 = go.Figure()
 
-# Close Price Line
+    # Close Price Line
     fig2.add_trace(go.Scatter(
       x=df.index,
       y=df['Close'],
@@ -344,7 +382,7 @@ if stock_name:
       name='Close Price'
     ))
 
-# Moving Average Line
+    # Moving Average Line
     fig2.add_trace(go.Scatter(
      x=df.index,
      y=df['MA20'],
@@ -354,15 +392,15 @@ if stock_name:
 
     st.plotly_chart(fig2, use_container_width=True)
              # =========================
-# AI PRICE PREDICTION
-# =========================
+    # AI PRICE PREDICTION
+    # =========================
 
     st.subheader("AI Future Price Prediction")
 
-# Create Day Numbers
+    # Create Day Numbers
     df['Day'] = np.arange(len(df))
 
-# Features and Labels
+    # Features and Labels
     X = df[['Day']]
     y = df['Close']
 
@@ -376,26 +414,26 @@ if stock_name:
       random_state=42
     )
 
-# Random Forest Model
+    # Random Forest Model
     model = RandomForestRegressor(
      n_estimators=100,
      random_state=42
     )
 
-# Train Model
+    # Train Model
     model.fit(X_train, y_train)
 
-# Predictions
+    # Predictions
     y_pred = model.predict(X_test)
 
-# Error Calculation
+    # Error Calculation
     mae = mean_absolute_error(y_test, y_pred)
 
-# Predict Next 7 Days
+    # Predict Next 7 Days
     future_days = np.arange(len(df), len(df) + 7).reshape(-1, 1)
     future_predictions = model.predict(future_days)
 
-# Display Predictions
+    # Display Predictions
     prediction_df = pd.DataFrame({
        "Next Days": range(1, 8),
        "Predicted Price": future_predictions
@@ -403,10 +441,10 @@ if stock_name:
 
     st.dataframe(prediction_df)
 
-# Plot Prediction Chart
+    # Plot Prediction Chart
     fig3 = go.Figure()
 
-# Original Price
+    # Original Price
     fig3.add_trace(go.Scatter(
        x=df.index,
        y=df['Close'],
@@ -414,7 +452,7 @@ if stock_name:
        name='Current Price'
     ))
 
-# Future Prediction
+    # Future Prediction
     future_dates = pd.date_range(
       start=df.index[-1],
       periods=7,
@@ -438,8 +476,8 @@ if stock_name:
 
 
     # =========================
-# FINAL AI RECOMMENDATION
-# =========================
+    # FINAL AI RECOMMENDATION
+    # =========================
 
     st.subheader("Final AI Recommendation")
 
@@ -457,7 +495,7 @@ if stock_name:
        st.warning("HOLD Recommendation ⚠️")
        recommendation = "HOLD"
 
-# Accuracy Estimate
+    # Accuracy Estimate
     accuracy = round((1 - (mae / y.mean())) * 100, 2)
 
     st.metric(
@@ -465,7 +503,7 @@ if stock_name:
       value=f"{accuracy}%"
     )
 
-# Summary Card
+    # Summary Card
     st.info(f"""
     Current Price: ₹{round(price,2)}
 
@@ -473,12 +511,12 @@ if stock_name:
 
     AI Recommendation: {recommendation}
     """)
-# AI PORTFOLIO RECOMMENDATION
-# =========================
+    # AI PORTFOLIO RECOMMENDATION
+    # =========================
 
     st.subheader("AI Portfolio Recommendation")
 
-# User Inputs
+    # User Inputs
     investment_amount = st.number_input(
     "Enter Investment Amount (₹)",
     min_value=1000,
